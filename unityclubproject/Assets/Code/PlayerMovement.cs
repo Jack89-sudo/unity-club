@@ -4,10 +4,12 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float walkSpeed = 3f; // Default walking speed
-    public float runSpeed = 7f;  // Speed when running
-    public float slowSpeed = 1.5f; // Speed when walking slower
-    public float acceleration = 10f; // Smoothing acceleration
+    public float walkSpeed = 3f;
+    public float runSpeed = 7f;
+    public float slowSpeed = 1.5f;
+    public float acceleration = 10f;
+    public StaminaBar staminaBar; // Reference to StaminaBar script
+
 
     private Rigidbody2D rb;
     private Vector2 movementInput;
@@ -17,37 +19,38 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        currentSpeed = walkSpeed; // Start with default walking speed
+        currentSpeed = walkSpeed;
     }
 
     void Update()
     {
-        // Get input from player
         movementInput.x = Input.GetAxisRaw("Horizontal");
         movementInput.y = Input.GetAxisRaw("Vertical");
-        movementInput = movementInput.normalized; // Normalize to prevent faster diagonal movement
+        movementInput = movementInput.normalized;
 
-        // Adjust target speed based on input
-        if (Input.GetKey(KeyCode.LeftShift)) // Running
+        if (Input.GetKey(KeyCode.LeftShift) && staminaBar.currentStamina > 0) // Only run if stamina available
         {
             targetSpeed = runSpeed;
+            staminaBar.ChangeStamina(-staminaBar.staminaDrainRate * Time.deltaTime); // Drain stamina
         }
-        else if (Input.GetKey(KeyCode.LeftControl)) // Walking slower
+        else if (Input.GetKey(KeyCode.LeftControl))
         {
             targetSpeed = slowSpeed;
         }
-        else // Default walking
+        else
         {
             targetSpeed = walkSpeed;
+            staminaBar.ChangeStamina(staminaBar.staminaRegenRate * Time.deltaTime); // Regenerate stamina
         }
     }
 
+
     void FixedUpdate()
     {
-        // Smoothly transition to the target speed
-        currentSpeed = Mathf.Lerp(currentSpeed, targetSpeed, acceleration * Time.fixedDeltaTime);
+        // Adjust speed smoothly
+        currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.fixedDeltaTime);
 
-        // Apply movement with the smoothed speed
+        // Apply movement
         rb.linearVelocity = movementInput * currentSpeed;
     }
 }
