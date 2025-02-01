@@ -29010,6 +29010,7 @@ MonoBehaviour:
   slowSpeed: 1.5
   acceleration: 10
   staminaBar: {fileID: 0}
+  playerCamera: {fileID: 0}
 --- !u!61 &1778323212
 BoxCollider2D:
   m_ObjectHideFlags: 0

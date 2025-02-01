@@ -10,6 +10,8 @@ public class PlayerMovement : MonoBehaviour
     public float acceleration = 10f;
     public StaminaBar staminaBar; // Reference to StaminaBar script
 
+    [Header("Camera Settings")]
+    public Camera playerCamera; // Allow setting the camera manually in Unity
 
     private Rigidbody2D rb;
     private Vector2 movementInput;
@@ -20,6 +22,12 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         currentSpeed = walkSpeed;
+
+        // If no camera is assigned, use the main camera
+        if (playerCamera == null)
+        {
+            playerCamera = Camera.main;
+        }
     }
 
     void Update()
@@ -42,8 +50,9 @@ public class PlayerMovement : MonoBehaviour
             targetSpeed = walkSpeed;
             staminaBar.ChangeStamina(staminaBar.staminaRegenRate * Time.deltaTime); // Regenerate stamina
         }
-    }
 
+        RotateTowardsMouse(); // Rotate player to face the cursor
+    }
 
     void FixedUpdate()
     {
@@ -52,5 +61,21 @@ public class PlayerMovement : MonoBehaviour
 
         // Apply movement
         rb.linearVelocity = movementInput * currentSpeed;
+    }
+
+    void RotateTowardsMouse()
+    {
+        if (playerCamera == null) return; // Safety check
+
+        // Get mouse position in world space
+        Vector3 mousePosition = playerCamera.ScreenToWorldPoint(Input.mousePosition);
+        mousePosition.z = 0f; // Ensure it's at the same Z level
+
+        // Calculate direction and angle
+        Vector2 direction = (mousePosition - transform.position).normalized;
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        // Rotate the player towards the mouse
+        rb.rotation = angle;
     }
 }
