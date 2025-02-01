@@ -8,15 +8,20 @@ public class PlayerMovement : MonoBehaviour
     public float runSpeed = 7f;
     public float slowSpeed = 1.5f;
     public float acceleration = 10f;
-    public StaminaBar staminaBar; // Reference to StaminaBar script
 
     [Header("Camera Settings")]
     public Camera playerCamera; // Allow setting the camera manually in Unity
+    public float defaultZoom = 5f;
+    public float runZoom = 7f;
+    public float slowZoom = 3.5f;
+    public float zoomSpeed = 5f;
 
     private Rigidbody2D rb;
     private Vector2 movementInput;
     private float currentSpeed;
     private float targetSpeed;
+    private bool inRoom = false;
+    private Vector3 roomCenter;
 
     void Start()
     {
@@ -36,19 +41,20 @@ public class PlayerMovement : MonoBehaviour
         movementInput.y = Input.GetAxisRaw("Vertical");
         movementInput = movementInput.normalized;
 
-        if (Input.GetKey(KeyCode.LeftShift) && staminaBar.currentStamina > 0) // Only run if stamina available
-        {
-            targetSpeed = runSpeed;
-            staminaBar.ChangeStamina(-staminaBar.staminaDrainRate * Time.deltaTime); // Drain stamina
-        }
-        else if (Input.GetKey(KeyCode.LeftControl))
+        if (Input.GetKey(KeyCode.LeftControl))
         {
             targetSpeed = slowSpeed;
+            AdjustCameraZoom(slowZoom);
+        }
+        else if (Input.GetKey(KeyCode.LeftShift))
+        {
+            targetSpeed = runSpeed;
+            AdjustCameraZoom(runZoom);
         }
         else
         {
             targetSpeed = walkSpeed;
-            staminaBar.ChangeStamina(staminaBar.staminaRegenRate * Time.deltaTime); // Regenerate stamina
+            AdjustCameraZoom(defaultZoom);
         }
 
         RotateTowardsMouse(); // Rotate player to face the cursor
@@ -61,6 +67,19 @@ public class PlayerMovement : MonoBehaviour
 
         // Apply movement
         rb.linearVelocity = movementInput * currentSpeed;
+
+        // Make the camera follow the player or stay centered in the room
+        if (playerCamera != null)
+        {
+            if (inRoom)
+            {
+                playerCamera.transform.position = new Vector3(roomCenter.x, roomCenter.y, playerCamera.transform.position.z);
+            }
+            else
+            {
+                playerCamera.transform.position = new Vector3(transform.position.x, transform.position.y, playerCamera.transform.position.z);
+            }
+        }
     }
 
     void RotateTowardsMouse()
@@ -77,5 +96,30 @@ public class PlayerMovement : MonoBehaviour
 
         // Rotate the player towards the mouse
         rb.rotation = angle;
+    }
+
+    void AdjustCameraZoom(float targetZoom)
+    {
+        if (playerCamera != null)
+        {
+            playerCamera.orthographicSize = Mathf.Lerp(playerCamera.orthographicSize, targetZoom, Time.deltaTime * zoomSpeed);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("roomtriggerbox"))
+        {
+            inRoom = true;
+            roomCenter = other.bounds.center;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("roomtriggerbox"))
+        {
+            inRoom = false;
+        }
     }
 }
