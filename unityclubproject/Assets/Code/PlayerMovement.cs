@@ -10,11 +10,15 @@ public class PlayerMovement : MonoBehaviour
     public float acceleration = 10f;
 
     [Header("Camera Settings")]
-    public Camera playerCamera; // Allow setting the camera manually in Unity
+    public Camera playerCamera;
     public float defaultZoom = 5f;
     public float runZoom = 7f;
     public float slowZoom = 3.5f;
     public float zoomSpeed = 5f;
+    public float cameraMoveSpeed = 3f;
+
+    [Header("Room Trigger Settings")]
+    public Transform roomTriggerObject; // Manually assign the trigger object in the Inspector
 
     private Rigidbody2D rb;
     private Vector2 movementInput;
@@ -28,7 +32,6 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         currentSpeed = walkSpeed;
 
-        // If no camera is assigned, use the main camera
         if (playerCamera == null)
         {
             playerCamera = Camera.main;
@@ -39,7 +42,11 @@ public class PlayerMovement : MonoBehaviour
     {
         movementInput.x = Input.GetAxisRaw("Horizontal");
         movementInput.y = Input.GetAxisRaw("Vertical");
-        movementInput = movementInput.normalized;
+
+        if (movementInput.sqrMagnitude > 1)
+        {
+            movementInput = movementInput.normalized;
+        }
 
         if (Input.GetKey(KeyCode.LeftControl))
         {
@@ -57,45 +64,34 @@ public class PlayerMovement : MonoBehaviour
             AdjustCameraZoom(defaultZoom);
         }
 
-        RotateTowardsMouse(); // Rotate player to face the cursor
+        RotateTowardsMouse();
     }
 
     void FixedUpdate()
     {
-        // Adjust speed smoothly
         currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.fixedDeltaTime);
-
-        // Apply movement
         rb.linearVelocity = movementInput * currentSpeed;
 
-        // Make the camera follow the player or stay centered in the room
         if (playerCamera != null)
         {
-            if (inRoom)
-            {
-                playerCamera.transform.position = new Vector3(roomCenter.x, roomCenter.y, playerCamera.transform.position.z);
-            }
-            else
-            {
-                playerCamera.transform.position = new Vector3(transform.position.x, transform.position.y, playerCamera.transform.position.z);
-            }
+            Vector3 targetPosition = inRoom
+                ? new Vector3(roomCenter.x, roomCenter.y, playerCamera.transform.position.z)
+                : new Vector3(transform.position.x, transform.position.y, playerCamera.transform.position.z);
+
+            playerCamera.transform.position = Vector3.Lerp(playerCamera.transform.position, targetPosition, Time.deltaTime * cameraMoveSpeed);
         }
     }
 
     void RotateTowardsMouse()
     {
-        if (playerCamera == null) return; // Safety check
+        if (playerCamera == null) return;
 
-        // Get mouse position in world space
         Vector3 mousePosition = playerCamera.ScreenToWorldPoint(Input.mousePosition);
-        mousePosition.z = 0f; // Ensure it's at the same Z level
-
-        // Calculate direction and angle
+        mousePosition.z = 0f;
         Vector2 direction = (mousePosition - transform.position).normalized;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
-        // Rotate the player towards the mouse
-        rb.rotation = angle;
+        transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
     void AdjustCameraZoom(float targetZoom)
@@ -108,16 +104,20 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.gameObject.CompareTag("roomtriggerbox"))
+        if (roomTriggerObject != null && other.transform == roomTriggerObject)
         {
-            inRoom = true;
-            roomCenter = other.bounds.center;
+            Transform parent = other.transform.parent;
+            if (parent != null && parent.CompareTag("roomtriggerbox"))
+            {
+                inRoom = true;
+                roomCenter = parent.GetComponent<Collider2D>().bounds.center;
+            }
         }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (other.gameObject.CompareTag("roomtriggerbox"))
+        if (roomTriggerObject != null && other.transform == roomTriggerObject)
         {
             inRoom = false;
         }

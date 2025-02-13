@@ -5,11 +5,12 @@ TagManager:
   serializedVersion: 3
   tags:
   - roomtriggerbox
+  - PickupRange
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - wall
   - Water
   - UI
   - 
