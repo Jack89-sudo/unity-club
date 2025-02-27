@@ -2,16 +2,15 @@ using UnityEngine;
 
 public class DoorController2D : MonoBehaviour
 {
-    public HingeJoint2D hingeJoint;  // Reference to the HingeJoint2D component
-    public Collider2D triggerZone;   // The collider that allows interaction
-    public float openAngle = 90f;    // Open angle (degrees)
-    public float closedAngle = 0f;   // Closed angle (degrees)
-    public float motorSpeed = 200f;  // Default motor speed
-    public float collisionSlowFactor = 0.3f; // How much the door slows when colliding
+    public HingeJoint2D hingeJoint;  // hingecomponent on door
+    public Collider2D triggerZone;   // player trigger zone colider
+    public float openAngle = 90f;    // angle of open rotation 
+    public float closedAngle = 0f;   // close rotation
+    public float motorSpeed = 200f;  // speed at opening
+    public float collisionSlowFactor = 0.3f;
 
     private bool isOpen = false;      // Door state
     private bool playerInRange = false; // Tracks if the player is inside the trigger
-    private bool isColliding = false;  // Checks if door is hitting an object
 
     private void Start()
     {
@@ -38,9 +37,8 @@ public class DoorController2D : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.collider.CompareTag("Player")) // Any collidable object tagged "Obstacle"
+        if (collision.collider.CompareTag("Player"))
         {
-            isColliding = true;
             AdjustMotorSpeed(collisionSlowFactor);
         }
     }
@@ -49,7 +47,6 @@ public class DoorController2D : MonoBehaviour
     {
         if (collision.collider.CompareTag("Player"))
         {
-            isColliding = false;
             AdjustMotorSpeed(1f); // Restore full speed
         }
     }
