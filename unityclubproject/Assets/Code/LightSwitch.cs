@@ -3,7 +3,7 @@ using UnityEngine;
 public class LightSwitch : MonoBehaviour
 {
     public GameObject[] lights; // Assign light GameObjects in the Inspector
-    private bool isOn = true; // Default light state
+    public bool isOn = true; // Default light state
     private bool playerInRange = false; // Track if player is in range
     public Collider2D playertrigger;
 
@@ -17,28 +17,26 @@ public class LightSwitch : MonoBehaviour
 
     void ToggleLights()
     {
-        isOn = !isOn; // Toggle state
-
+        // Toggle state
+        Debug.Log("yea");
         foreach (GameObject light in lights)
         {
             light.SetActive(isOn); // Enable/Disable light objects
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    private void OnTriggerEnter2D(Collider2D playertrigger)
     {
-        if (other == playertrigger) // Ensure player has "Player" tag
-        {
+
             playerInRange = true;
             Debug.Log("touched");
-        }
+      
     }
 
-    private void OnTriggerExit2D(Collider2D other)
+    private void OnTriggerExit2D(Collider2D playertrigger)
     {
-        if (other == playertrigger)
-        {
+
             playerInRange = false;
-        }
+        
     }
 }
