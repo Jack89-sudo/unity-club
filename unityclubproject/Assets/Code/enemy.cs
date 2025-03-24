@@ -26,7 +26,7 @@ public class Enemy : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         agent.updateRotation = false; // We will manually rotate
-        agent.updateUpAxis = false; // Keep movement 2D (no Z rotation)
+        agent.updateUpAxis = false;   // Keep movement 2D (no Z rotation)
 
         // Get wander bounds from the attached sprite
         if (wanderAreaSprite != null)
@@ -38,7 +38,14 @@ public class Enemy : MonoBehaviour
             Debug.LogError("Wander Area Sprite not assigned!");
         }
 
-        // Scale detection sprite for visualization
+        // Setup detection collider dynamically
+        CircleCollider2D detectionCollider = gameObject.AddComponent<CircleCollider2D>();
+        detectionCollider.isTrigger = true;
+        detectionCollider.radius = detectionRadius;
+
+        // Optional: Assign a layer or tag to help filter collisions if needed
+
+        // Scale detection sprite just for visualization (optional)
         if (detectionSprite != null)
         {
             detectionSprite.localScale = new Vector3(detectionRadius * 2, detectionRadius * 2, 1);
@@ -46,6 +53,7 @@ public class Enemy : MonoBehaviour
 
         SetNewWanderDestination();
     }
+
 
     private void Update()
     {
