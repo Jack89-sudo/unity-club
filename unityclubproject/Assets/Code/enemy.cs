@@ -13,7 +13,7 @@ public class Enemy : MonoBehaviour
 
     [Header("Detection")]
     [SerializeField] private Transform detectionSprite;
-    [SerializeField] private float detectionRadius = 3f;
+    [SerializeField] public float detectionRadius = 3f;
     [SerializeField] private float secondaryDetectionRadius = 6f; // New secondary radius
     [SerializeField] private float chaseDuration = 5f;
 
