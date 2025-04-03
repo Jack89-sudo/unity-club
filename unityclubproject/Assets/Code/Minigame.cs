@@ -1,29 +1,43 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Minigame : MonoBehaviour
 {
-        public Collider2D otherCollider; // Assign in Inspector
+    public Collider2D playerCollider;
+    private Collider2D myCollider;
 
-        public Collider2D myCollider;
-        private bool game = false;
+    public GameObject minigameUI;
 
-        void Start()
-        {
-            myCollider = GetComponent<Collider2D>();
-        }
+    public GameObject objectToHide; // 👈 Add this!
 
-        void Update()
-        {
-            if (myCollider.IsTouching(otherCollider) && Input.GetKeyDown(KeyCode.E))
-            {
-            
-
-            }
-        }
-        
-        void activategame()
-         {
-        game = true;
-           }
+    private void Start()
+    {
+        myCollider = GetComponent<Collider2D>();
+        minigameUI.SetActive(false);
     }
+
+    private void Update()
+    {
+        if (myCollider.IsTouching(playerCollider) && Input.GetKeyDown(KeyCode.E))
+        {
+            ActivateGame();
+        }
+    }
+
+    void ActivateGame()
+    {
+        minigameUI.SetActive(true);
+        Time.timeScale = 0f;
+    }
+
+    public void EndGame()
+    {
+        minigameUI.SetActive(false);
+        Time.timeScale = 1f;
+
+        if (objectToHide != null)
+        {
+            objectToHide.SetActive(false); // 👈 Hide it!
+        }
+    }
+}
 

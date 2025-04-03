@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
 
@@ -8,27 +8,31 @@ public class Enemy : MonoBehaviour
     private State currentState = State.Wandering;
 
     [Header("Wander Settings")]
-    [SerializeField] private SpriteRenderer wanderAreaSprite; // Sprite defines wander area
+    [SerializeField] private SpriteRenderer wanderAreaSprite;
     [SerializeField] private float wanderDelay = 2f;
 
     [Header("Detection")]
-    [SerializeField] private Transform detectionSprite; // Sprite for detection area
+    [SerializeField] private Transform detectionSprite;
     [SerializeField] private float detectionRadius = 3f;
-    [SerializeField] private float chaseDuration = 5f; // How long the enemy chases before giving up
+    [SerializeField] private float secondaryDetectionRadius = 6f; // New secondary radius
+    [SerializeField] private float chaseDuration = 5f;
 
     [Header("References")]
     [SerializeField] private Transform target;
     private NavMeshAgent agent;
     private Bounds wanderBounds;
     private Coroutine chaseCoroutine;
+    private Coroutine wanderCoroutine;
+
+    private CircleCollider2D primaryCollider;
+    private CircleCollider2D secondaryCollider;
 
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        agent.updateRotation = false; // We will manually rotate
-        agent.updateUpAxis = false;   // Keep movement 2D (no Z rotation)
+        agent.updateRotation = false;
+        agent.updateUpAxis = false;
 
-        // Get wander bounds from the attached sprite
         if (wanderAreaSprite != null)
         {
             wanderBounds = wanderAreaSprite.bounds;
@@ -38,14 +42,16 @@ public class Enemy : MonoBehaviour
             Debug.LogError("Wander Area Sprite not assigned!");
         }
 
-        // Setup detection collider dynamically
-        CircleCollider2D detectionCollider = gameObject.AddComponent<CircleCollider2D>();
-        detectionCollider.isTrigger = true;
-        detectionCollider.radius = detectionRadius;
+        // Primary detection collider
+        primaryCollider = gameObject.AddComponent<CircleCollider2D>();
+        primaryCollider.isTrigger = true;
+        primaryCollider.radius = detectionRadius;
 
-        // Optional: Assign a layer or tag to help filter collisions if needed
+        // Secondary detection collider
+        secondaryCollider = gameObject.AddComponent<CircleCollider2D>();
+        secondaryCollider.isTrigger = true;
+        secondaryCollider.radius = secondaryDetectionRadius;
 
-        // Scale detection sprite just for visualization (optional)
         if (detectionSprite != null)
         {
             detectionSprite.localScale = new Vector3(detectionRadius * 2, detectionRadius * 2, 1);
@@ -54,24 +60,30 @@ public class Enemy : MonoBehaviour
         SetNewWanderDestination();
     }
 
-
     private void Update()
     {
         if (currentState == State.Chasing)
         {
             agent.SetDestination(target.position);
         }
-        else if (currentState == State.Wandering && !agent.pathPending && agent.remainingDistance < 0.1f)
+        else if (currentState == State.Wandering && !agent.pathPending && agent.remainingDistance < 0.1f && wanderCoroutine == null)
         {
-            Invoke(nameof(SetNewWanderDestination), wanderDelay);
+            wanderCoroutine = StartCoroutine(WanderDelayRoutine());
         }
 
         RotateTowardsMovementDirection();
     }
 
+    private IEnumerator WanderDelayRoutine()
+    {
+        yield return new WaitForSeconds(wanderDelay);
+        SetNewWanderDestination();
+        wanderCoroutine = null;
+    }
+
     private void SetNewWanderDestination()
     {
-        if (wanderAreaSprite == null || currentState == State.Chasing) return; // Stop wandering if chasing
+        if (wanderAreaSprite == null || currentState == State.Chasing) return;
 
         float randomX = Random.Range(wanderBounds.min.x, wanderBounds.max.x);
         float randomY = Random.Range(wanderBounds.min.y, wanderBounds.max.y);
@@ -82,7 +94,7 @@ public class Enemy : MonoBehaviour
 
     private void RotateTowardsMovementDirection()
     {
-        if (agent.velocity.sqrMagnitude > 0.01f) // Ensure movement is happening
+        if (agent.velocity.sqrMagnitude > 0.01f)
         {
             Vector3 moveDirection = agent.velocity.normalized;
             float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
@@ -92,13 +104,18 @@ public class Enemy : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
-        {
-            if (chaseCoroutine != null)
-                StopCoroutine(chaseCoroutine);
+        if (!other.CompareTag("Player")) return;
 
-            currentState = State.Chasing;
-            chaseCoroutine = StartCoroutine(ChaseTimer());
+        float distance = Vector3.Distance(transform.position, other.transform.position);
+
+        if (distance <= detectionRadius)
+        {
+            StartChasing();
+        }
+        else if (distance <= secondaryDetectionRadius)
+        {
+            Debug.Log("Player entered outer detection zone (secondary radius).");
+            // Optional: Begin suspicious state or delay-based chasing here
         }
     }
 
@@ -106,14 +123,22 @@ public class Enemy : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // Start the chase timer but don't immediately stop chasing
+            // Optional: Handle logic for player leaving detection zones
         }
+    }
+
+    private void StartChasing()
+    {
+        if (chaseCoroutine != null)
+            StopCoroutine(chaseCoroutine);
+
+        currentState = State.Chasing;
+        chaseCoroutine = StartCoroutine(ChaseTimer());
     }
 
     private IEnumerator ChaseTimer()
     {
         yield return new WaitForSeconds(chaseDuration);
-
         currentState = State.Wandering;
         SetNewWanderDestination();
     }
@@ -128,5 +153,8 @@ public class Enemy : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
+
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f); // Orange for outer radius
+        Gizmos.DrawWireSphere(transform.position, secondaryDetectionRadius);
     }
 }

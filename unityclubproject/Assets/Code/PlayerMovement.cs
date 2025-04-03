@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal; // Needed for Light2D
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -17,8 +18,15 @@ public class PlayerMovement : MonoBehaviour
     public float zoomSpeed = 5f;
     public float cameraMoveSpeed = 3f;
 
+    public enum MoveState { Sneaking, Walking, Running }
+    public MoveState CurrentMoveState { get; private set; }
+
+
     [Header("Room Trigger Settings")]
     public Transform roomTriggerObject; // Manually assign the trigger object in the Inspector
+
+    [Header("Light Settings")]
+    public Light2D playerLight; // Assign this in the Inspector (Player's Light2D component)
 
     private Rigidbody2D rb;
     private Vector2 movementInput;
@@ -40,6 +48,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // Movement input
         movementInput.x = Input.GetAxisRaw("Horizontal");
         movementInput.y = Input.GetAxisRaw("Vertical");
 
@@ -48,20 +57,30 @@ public class PlayerMovement : MonoBehaviour
             movementInput = movementInput.normalized;
         }
 
+        // Adjust speed and zoom
         if (Input.GetKey(KeyCode.LeftControl))
         {
             targetSpeed = slowSpeed;
             AdjustCameraZoom(slowZoom);
+            CurrentMoveState = MoveState.Sneaking;
         }
         else if (Input.GetKey(KeyCode.LeftShift))
         {
             targetSpeed = runSpeed;
             AdjustCameraZoom(runZoom);
+            CurrentMoveState = MoveState.Running;
         }
         else
         {
             targetSpeed = walkSpeed;
             AdjustCameraZoom(defaultZoom);
+            CurrentMoveState = MoveState.Walking;
+        }
+
+        // Toggle light with F
+        if (Input.GetKeyDown(KeyCode.F) && playerLight != null)
+        {
+            playerLight.enabled = !playerLight.enabled;
         }
 
         RotateTowardsMouse();
@@ -69,9 +88,11 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Move player
         currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.fixedDeltaTime);
         rb.linearVelocity = movementInput * currentSpeed;
 
+        // Move camera
         if (playerCamera != null)
         {
             Vector3 targetPosition = inRoom
