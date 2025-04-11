@@ -147,7 +147,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      smith_floor_8p_0: 8621233665798574275
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
