@@ -6,12 +6,15 @@ public class MathMinigame : MonoBehaviour
 {
     public TMP_Text questionText; // ✅ Use TMP_Text instead of Text
     public TMP_InputField answerInput; // ✅ Use TMP_InputField
+    private control gameControl; // Add this line near the top
 
     private int correctAnswer;
     private Minigame trigger;
 
     private void OnEnable()
     {
+        gameControl = FindFirstObjectByType<control>();
+
         trigger = FindFirstObjectByType<Minigame>();
         GenerateProblem();
         answerInput.text = "";
@@ -47,6 +50,13 @@ public class MathMinigame : MonoBehaviour
             if (playerAnswer == correctAnswer)
             {
                 Debug.Log("Correct!");
+
+                // ✅ Advance the task when homework is active
+                if (gameControl != null && gameControl.currentTask >= 1 && gameControl.currentTask < 7)
+                {
+                    gameControl.CompleteHomework();
+                }
+
                 trigger.EndGame();
             }
             else
@@ -61,4 +71,5 @@ public class MathMinigame : MonoBehaviour
             answerInput.text = "";
         }
     }
+
 }

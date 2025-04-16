@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 99dbbf0db0acc6f4aac422bfeb803400
+guid: f95707525b01c394ab474c03674d1612
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3956119112595129740
-    second: appledapple (2)_0
+      213: 411573846464711392
+    second: ChatGPT Image Apr 14, 2025, 04_42_25 PM_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: appledapple (2)_0
+      name: ChatGPT Image Apr 14, 2025, 04_42_25 PM_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 8
-        height: 8
+        x: 71
+        y: 57
+        width: 895
+        height: 866
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 47a32a4a0aa0919c0800000000000000
-      internalID: -3956119112595129740
+      spriteID: 0eace559b3436b500800000000000000
+      internalID: 411573846464711392
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      appledapple (2)_0: -3956119112595129740
+      ChatGPT Image Apr 14, 2025, 04_42_25 PM_0: 411573846464711392
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

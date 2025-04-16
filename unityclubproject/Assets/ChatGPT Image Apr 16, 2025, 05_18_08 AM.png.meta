@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: 074ad6f8a4ee13e44894164b307dafbc
+guid: 69d4fb52b829b2546956a0912f7dd960
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7782735857540759081
-    second: appledapple (1)_0
+      213: 8042208043954198111
+    second: ChatGPT Image Apr 16, 2025, 05_18_08 AM_0
+  - first:
+      213: 6896496207009198709
+    second: ChatGPT Image Apr 16, 2025, 05_18_08 AM_1
+  - first:
+      213: -4110026751827093430
+    second: ChatGPT Image Apr 16, 2025, 05_18_08 AM_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +43,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -113,13 +119,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: appledapple (1)_0
+      name: ChatGPT Image Apr 16, 2025, 05_18_08 AM_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 8
-        height: 8
+        x: 221
+        y: 16
+        width: 706
+        height: 782
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +134,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7d18696e8fa2ef390800000000000000
-      internalID: -7782735857540759081
+      spriteID: f56dda54b99ab9f60800000000000000
+      internalID: 8042208043954198111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ChatGPT Image Apr 16, 2025, 05_18_08 AM_1
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 634
+        width: 101
+        height: 103
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 572bc95d2c645bf50800000000000000
+      internalID: 6896496207009198709
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ChatGPT Image Apr 16, 2025, 05_18_08 AM_2
+      rect:
+        serializedVersion: 2
+        x: 606
+        y: 600
+        width: 312
+        height: 395
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a485effe17046f6c0800000000000000
+      internalID: -4110026751827093430
       vertices: []
       indices: 
       edges: []
@@ -148,7 +198,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      appledapple (1)_0: -7782735857540759081
+      ChatGPT Image Apr 16, 2025, 05_18_08 AM_0: 8042208043954198111
+      ChatGPT Image Apr 16, 2025, 05_18_08 AM_1: 6896496207009198709
+      ChatGPT Image Apr 16, 2025, 05_18_08 AM_2: -4110026751827093430
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
