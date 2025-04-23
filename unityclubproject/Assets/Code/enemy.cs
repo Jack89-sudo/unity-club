@@ -195,7 +195,7 @@ public class Enemy : MonoBehaviour
     // - There is no obstruction (using obstructionMask) blocking the view.
     private bool CheckVision()
     {
-        if (target == null)
+        if ((target == null) || (PlayerHiding.Instance.IsHidden))
             return false;
 
         Vector3 toPlayer = target.position - transform.position;
