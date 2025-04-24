@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8d37f005b41eb54b9833994033f0a2b, type: 3}
+  m_Name: Lollipop
+  m_EditorClassIdentifier: 
+  itemType: 1
+  itemName: lollipop
+  icon: {fileID: -8808590520474612917, guid: 39e3fe1073ed35747879085c21299883, type: 3}
+  worldPrefab: {fileID: 1561590001459391500, guid: ed6ec6e47d0e69944a3353bb7da238d4, type: 3}

@@ -83,7 +83,6 @@ public class control : MonoBehaviour
         if (currentTask == 8)
         {
             taskText.text = "You escaped!";
-            // Add logic here to end the game or trigger cutscene
         }
     }
 
@@ -111,5 +110,4 @@ public class control : MonoBehaviour
                 break;
         }
     }
-
 }

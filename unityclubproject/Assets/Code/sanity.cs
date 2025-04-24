@@ -61,9 +61,6 @@ public class PlayerSanity : MonoBehaviour
         {
             sanitySlider.value = sanity;
         }
-
-        // Output the current sanity value to the Console.
-        Debug.Log("Player Sanity: " + sanity.ToString("F2"));
     }
 
     // Visualize the sanity loss radius in the Scene view.

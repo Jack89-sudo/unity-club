@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: e0c34bc643bfe824bb01f204f686b874
+guid: 65545d4ce8efa6249bb26be3b10b5e63
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4588306425369936041
-    second: smith_floor_ver2_16.png-1.png_0
+      213: -5913738696227704600
+    second: flashlight_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -40,9 +40,9 @@ TextureImporter:
     filterMode: 0
     aniso: 1
     mipBias: 0
-    wrapU: 2
-    wrapV: 2
-    wrapW: 2
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 8
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -113,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: smith_floor_ver2_16.png-1.png_0
+      name: flashlight_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 1
         y: 0
-        width: 16
-        height: 16
+        width: 6
+        height: 7
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 75fbe23bd9f0350c0800000000000000
-      internalID: -4588306425369936041
+      spriteID: 8e0bdd4fcfd2eeda0800000000000000
+      internalID: -5913738696227704600
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 512802919dfa2f845bbf94192e5411e2
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      smith_floor_ver2_16.png-1.png_0: -4588306425369936041
+      flashlight_0: -5913738696227704600
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
