@@ -16,7 +16,7 @@ public class EndButton : MonoBehaviour
     void TaskOnClick()
     {
         //Output this to console when Button1 or Button3 is clicked
-        SceneManager.LoadScene("Ending Screen");
+        SceneManager.LoadScene("Main menu");
     }
 
 }
