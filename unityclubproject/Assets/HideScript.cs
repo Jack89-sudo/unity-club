@@ -1,125 +1,147 @@
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.Rendering.Universal;
 
 public class PlayerHiding : MonoBehaviour
 {
-    public static PlayerHiding Instance; // Singleton pattern for global access
+    public static PlayerHiding Instance;
 
     [Header("Hiding Settings")]
-    public float hideConeAngle = 45f;
-    public float hideDistance = 2f;
-    public LayerMask hideableLayer;
-    public float unhideOffset = 0.5f;
+    [SerializeField] private float hideDistance = 2f;
+    [SerializeField] private float hideAngle = 45f;
+    [SerializeField] private float unhideOffset = 1f;
 
-    [Header("Child Objects")]
-    public GameObject[] objectsToHide; // Assign flashlight and other children in Inspector
+    [Header("Object Lists")]
+    [SerializeField] private List<Transform> hidingTriggers = new List<Transform>();
+    [SerializeField] private List<GameObject> objectsToHide = new List<GameObject>();
 
+    [Header("Components")]
+    [SerializeField] private Light2D playerFlashlight;
+    [SerializeField] private GameObject hidePrompt;
+    
     private Vector3 preHidePosition;
     private bool isHidden;
-    private SpriteRenderer[] playerRenderers;
-    private PlayerMovement playerMovement;
-    private Collider2D playerCollider;
+    private Transform currentHideSpot;
+    private Rigidbody2D rb;
+    private SpriteRenderer[] renderers;
 
-    public bool IsHidden => isHidden; // Public read-only access
+    public bool IsHidden => isHidden;
 
     void Awake()
     {
-        // Singleton setup
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     void Start()
     {
-        playerRenderers = GetComponentsInChildren<SpriteRenderer>();
-        playerMovement = GetComponent<PlayerMovement>();
-        playerCollider = GetComponent<Collider2D>();
+        rb = GetComponent<Rigidbody2D>();
+        renderers = GetComponentsInChildren<SpriteRenderer>();
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        if (!isHidden)
         {
-            if (isHidden)
+            CheckForNearbyHidingSpots();
+            if (Input.GetKeyDown(KeyCode.E)) AttemptHide();
+        }
+        else
+        {
+            if (Input.GetKeyDown(KeyCode.E)) Unhide();
+        }
+    }
+
+    void CheckForNearbyHidingSpots()
+    {
+        currentHideSpot = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (Transform trigger in hidingTriggers)
+        {
+            if (!trigger.gameObject.activeInHierarchy) continue;
+
+            Vector2 directionToTrigger = trigger.position - transform.position;
+            float distance = directionToTrigger.magnitude;
+            float angle = Vector2.Angle(transform.right, directionToTrigger);
+
+            if (distance <= hideDistance && angle <= hideAngle/2)
             {
-                Unhide();
-            }
-            else
-            {
-                Collider2D hideSpot = CheckForHideableInCone();
-                if (hideSpot != null)
+                if (distance < closestDistance)
                 {
-                    Hide(hideSpot);
+                    closestDistance = distance;
+                    currentHideSpot = trigger;
                 }
             }
         }
+
+        if (hidePrompt) hidePrompt.SetActive(currentHideSpot != null);
     }
 
-    Collider2D CheckForHideableInCone()
+    void AttemptHide()
     {
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, hideDistance, hideableLayer);
-        
-        foreach (Collider2D col in colliders)
+        if (currentHideSpot != null)
         {
-            Vector2 directionToObject = (col.transform.position - transform.position).normalized;
-            float angleToObject = Vector2.Angle(transform.right, directionToObject);
-
-            if (angleToObject <= hideConeAngle / 2f)
-            {
-                return col;
-            }
+            Hide(currentHideSpot);
+            Debug.Log("Hiding at: " + currentHideSpot.name);
         }
-        return null;
     }
 
-    void Hide(Collider2D hideSpot)
+    void Hide(Transform hideSpot)
     {
         isHidden = true;
         preHidePosition = transform.position;
+        
+        // Store physics state
+        rb.simulated = false;
+        transform.position = hideSpot.position;
 
-        // Store player at hide spot's position
-        transform.position = hideSpot.bounds.center;
+        // Hide visual elements
+        foreach (SpriteRenderer renderer in renderers)
+            renderer.enabled = false;
 
-        // Disable components
-        TogglePlayerComponents(false);
-        ToggleChildren(false);
+        // Disable objects
+        foreach (GameObject obj in objectsToHide)
+            obj.SetActive(false);
+
+        // Disable flashlight
+        if (playerFlashlight != null)
+            playerFlashlight.enabled = false;
     }
 
     void Unhide()
     {
         isHidden = false;
         
-        // Return to original position with offset
+        // Restore physics
+        rb.simulated = true;
+        rb.linearVelocity = Vector2.zero;
         transform.position = preHidePosition + (Vector3)Random.insideUnitCircle.normalized * unhideOffset;
 
-        // Enable components
-        TogglePlayerComponents(true);
-        ToggleChildren(true);
+        // Show visual elements
+        foreach (SpriteRenderer renderer in renderers)
+            renderer.enabled = true;
+
+        // Enable objects
+        foreach (GameObject obj in objectsToHide)
+            obj.SetActive(true);
+
+        // Enable flashlight
+        if (playerFlashlight != null)
+            playerFlashlight.enabled = true;
     }
 
-    void TogglePlayerComponents(bool state)
+    // Debug visualization
+    void OnDrawGizmosSelected()
     {
-        foreach (SpriteRenderer renderer in playerRenderers)
-        {
-            renderer.enabled = state;
-        }
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, hideDistance);
         
-        playerMovement.enabled = state;
-        playerCollider.enabled = state;
+        Vector2 rightDirection = transform.right * hideDistance;
+        Vector2 angleA = Quaternion.Euler(0, 0, hideAngle/2) * rightDirection;
+        Vector2 angleB = Quaternion.Euler(0, 0, -hideAngle/2) * rightDirection;
+        
+        Gizmos.DrawLine(transform.position, (Vector2)transform.position + angleA);
+        Gizmos.DrawLine(transform.position, (Vector2)transform.position + angleB);
     }
-
-    void ToggleChildren(bool state)
-    {
-        foreach (GameObject child in objectsToHide)
-        {
-            child.SetActive(state);
-        }
-    }
-
-    // Add Gizmos drawing from previous versions
 }
