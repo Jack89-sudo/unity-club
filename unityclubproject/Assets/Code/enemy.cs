@@ -2,6 +2,7 @@
 using UnityEngine.AI;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class Enemy : MonoBehaviour
 {
@@ -283,6 +284,7 @@ public class Enemy : MonoBehaviour
     private void GameOver()
     {
         Debug.Log("Game Over: Player has been killed.");
+        SceneManager.LoadScene("Ending Screen");
     }
 
     private void OnDrawGizmosSelected()
