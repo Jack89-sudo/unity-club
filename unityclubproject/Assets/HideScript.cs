@@ -141,7 +141,7 @@ public class PlayerHiding : MonoBehaviour
 
         // Enable flashlight
         if (playerFlashlight != null)
-            playerFlashlight.enabled = true;
+            playerFlashlight.enabled = false;
     }
 
     void OnDrawGizmosSelected()
