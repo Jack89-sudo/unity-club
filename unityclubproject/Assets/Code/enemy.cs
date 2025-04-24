@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
- // For Light2D
 using System.Collections;
 using System.Collections.Generic;
 
@@ -14,48 +13,42 @@ public class Enemy : MonoBehaviour
     [SerializeField] private float wanderDelay = 2f;
 
     [Header("Detection")]
-    [SerializeField] public float detectionRadius = 3f;         // Primary detection radius (walking detection)
-    [SerializeField] private float secondaryDetectionRadius = 10f; // Secondary detection radius (for running)
+    [SerializeField] public float detectionRadius = 3f;
+    [SerializeField] private float secondaryDetectionRadius = 10f;
     [SerializeField] private float chaseDuration = 5f;
 
     [Header("Vision Settings")]
-    [SerializeField] private float visionDistance = 10f; // Maximum vision distance in front of the enemy
-    [SerializeField] private float visionAngle = 45f;    // Field of view (FOV) in degrees
-    [SerializeField] private LayerMask obstructionMask;  // Layer mask for walls/obstacles
+    [SerializeField] private float visionDistance = 10f;
+    [SerializeField] private float visionAngle = 45f;
+    [SerializeField] private LayerMask obstructionMask;
 
     [Header("Light Settings")]
-    [SerializeField] private UnityEngine.Rendering.Universal.Light2D exitRoomLight; // Attach a Light2D to this field in the inspector
+    [SerializeField] private UnityEngine.Rendering.Universal.Light2D exitRoomLight;
 
     [Header("Kill Settings")]
-    [SerializeField] private float killRadius = 1f; // If the player gets within this distance, the game ends
+    [SerializeField] private float killRadius = 1f;
 
     [Header("References")]
-    [SerializeField] private Transform target; // Typically, the player's transform.
+    [SerializeField] private Transform target;
     private NavMeshAgent agent;
     private Bounds wanderBounds;
     private Coroutine chaseCoroutine;
     private Coroutine wanderCoroutine;
 
-    // Two colliders for independent detection areas.
     private CircleCollider2D primaryCollider;
     private CircleCollider2D secondaryCollider;
 
-    [Header("Player Reference")]
-    [SerializeField] private PlayerMovement playerMovement; // Reference to the PlayerMovement script
-
     [Header("Patrol Settings")]
-    [SerializeField] private List<Transform> patrolPoints; // List of patrol points
+    [SerializeField] private List<Transform> patrolPoints;
     [SerializeField] private float patrolInterval = 10f;
     [SerializeField] private float patrolWaitTime = 3f;
 
     private Vector3 lastWanderPosition;
     private Coroutine patrolCoroutine;
-
-    // For secondary detection chase:
+    private Vector3 originalPosition;
+    
     private bool isSecondaryChase = false;
     private Vector3 secondaryChaseTarget;
-
-    // Flag for a persistent (locked-in) chase (triggered via walking or vision).
     private bool isPersistentChase = false;
 
     private void Start()
@@ -65,16 +58,19 @@ public class Enemy : MonoBehaviour
         agent.updateUpAxis = false;
 
         if (wanderAreaSprite != null)
+        {
             wanderBounds = wanderAreaSprite.bounds;
+            originalPosition = wanderBounds.center;
+        }
         else
+        {
             Debug.LogError("Wander Area Sprite not assigned!");
+        }
 
-        // Setup the primary detection collider.
         primaryCollider = gameObject.AddComponent<CircleCollider2D>();
         primaryCollider.isTrigger = true;
         primaryCollider.radius = detectionRadius;
 
-        // Setup the secondary detection collider.
         secondaryCollider = gameObject.AddComponent<CircleCollider2D>();
         secondaryCollider.isTrigger = true;
         secondaryCollider.radius = secondaryDetectionRadius;
@@ -94,12 +90,10 @@ public class Enemy : MonoBehaviour
             if (currentState != State.Wandering || patrolPoints.Count == 0)
                 continue;
 
-            // Choose a random patrol point.
             Transform patrolPoint = patrolPoints[Random.Range(0, patrolPoints.Count)];
             lastWanderPosition = transform.position;
             agent.SetDestination(patrolPoint.position);
 
-            // Wait until reaching the patrol point.
             while (Vector3.Distance(transform.position, patrolPoint.position) > 0.5f)
                 yield return null;
 
@@ -110,54 +104,39 @@ public class Enemy : MonoBehaviour
 
     private void Update()
     {
-        if (playerMovement == null)
-            playerMovement = FindObjectOfType<PlayerMovement>();
-
-        // --- Vision Check ---
-        // If the enemy sees the player (within its vision cone and unobstructed), begin a persistent chase.
+        // Vision-based chasing
         if (CheckVision())
         {
             StartChasing(true);
         }
 
-        // For nonpersistent chases, if the player moves slow, cancel chasing.
-        if (playerMovement != null && playerMovement.currentMoveState == PlayerMovement.MoveState.Slow && !isPersistentChase)
+        // Handle hidden player
+        if (currentState == State.Chasing && PlayerHiding.Instance.IsHidden)
         {
-            if (currentState == State.Chasing)
-            {
-                currentState = State.Wandering;
-                isSecondaryChase = false;
-                if (chaseCoroutine != null)
-                {
-                    StopCoroutine(chaseCoroutine);
-                    chaseCoroutine = null;
-                }
-                SetNewWanderDestination();
-            }
-            return;
+            StopChasing();
+            StartCoroutine(WanderAndReturn());
         }
 
-        // --- Chase Behavior ---
+        // Chase cancellation logic
+        if (currentState == State.Chasing && !isPersistentChase)
+        {
+            float playerDist = Vector3.Distance(transform.position, target.position);
+            if (playerDist > secondaryDetectionRadius)
+            {
+                StopChasing();
+            }
+        }
+
+        // Chase behavior
         if (currentState == State.Chasing)
         {
             if (isPersistentChase)
             {
-                // Persistent chase: always follow the player.
                 agent.SetDestination(target.position);
             }
             else
             {
-                float playerDist = Vector3.Distance(transform.position, target.position);
-                if (playerDist <= detectionRadius)
-                {
-                    isSecondaryChase = false;
-                    agent.SetDestination(target.position);
-                }
-                else if (playerDist <= secondaryDetectionRadius && playerMovement.currentMoveState == PlayerMovement.MoveState.Running)
-                {
-                    secondaryChaseTarget = target.position;
-                    agent.SetDestination(secondaryChaseTarget);
-                }
+                agent.SetDestination(secondaryChaseTarget);
             }
         }
         else if (currentState == State.Wandering && !agent.pathPending && agent.remainingDistance < 0.1f && wanderCoroutine == null)
@@ -167,53 +146,60 @@ public class Enemy : MonoBehaviour
 
         RotateTowardsMovementDirection();
 
-        // --- Light Activation ---
-        // If the enemy has left its original room (wanderArea bounds), enable the attached light.
+        // Light activation
         if (wanderAreaSprite != null && exitRoomLight != null)
         {
-            if (wanderBounds.Contains(transform.position))
-                exitRoomLight.enabled = false;
-            else
-                exitRoomLight.enabled = true;
+            exitRoomLight.enabled = !wanderBounds.Contains(transform.position);
         }
 
-        // --- Kill Radius Check ---
-        // If the player gets too close to the enemy, trigger game over.
-        if (target != null)
+        // Kill radius check
+        if (target != null && Vector3.Distance(transform.position, target.position) <= killRadius)
         {
-            float distToPlayer = Vector3.Distance(transform.position, target.position);
-            if (distToPlayer <= killRadius)
-            {
-                GameOver();
-            }
+            GameOver();
         }
     }
 
-    // CheckVision casts a ray from the enemy toward the player and returns true if:
-    // - The player is within visionDistance.
-    // - The player is within the enemy's FOV (centered on transform.right).
-    // - There is no obstruction (using obstructionMask) blocking the view.
     private bool CheckVision()
     {
-        if ((target == null) || (PlayerHiding.Instance.IsHidden))
-            return false;
+        if (target == null || PlayerHiding.Instance.IsHidden) return false;
 
         Vector3 toPlayer = target.position - transform.position;
         float distanceToPlayer = toPlayer.magnitude;
-        if (distanceToPlayer > visionDistance)
-            return false;
+        if (distanceToPlayer > visionDistance) return false;
 
         float angleToPlayer = Vector3.Angle(transform.right, toPlayer);
-        if (angleToPlayer > visionAngle * 0.5f)
-            return false;
+        if (angleToPlayer > visionAngle * 0.5f) return false;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, toPlayer.normalized, distanceToPlayer, obstructionMask);
-        if (hit.collider != null)
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, toPlayer.normalized, 
+                                           distanceToPlayer, obstructionMask);
+        return hit.collider == null;
+    }
+
+    private IEnumerator WanderAndReturn()
+    {
+        // Wander for 2 seconds
+        float wanderTime = 2f;
+        float timer = 0f;
+
+        while (timer < wanderTime)
         {
-            // An obstruction is blocking the view.
-            return false;
+            if (!agent.pathPending && agent.remainingDistance < 0.5f)
+            {
+                SetNewWanderDestination();
+            }
+            timer += Time.deltaTime;
+            yield return null;
         }
-        return true;
+
+        // Return to original position
+        agent.SetDestination(originalPosition);
+        while (Vector3.Distance(transform.position, originalPosition) > 0.5f)
+        {
+            yield return null;
+        }
+
+        // Resume normal behavior
+        SetNewWanderDestination();
     }
 
     private IEnumerator WanderDelayRoutine()
@@ -225,12 +211,13 @@ public class Enemy : MonoBehaviour
 
     private void SetNewWanderDestination()
     {
-        if (wanderAreaSprite == null || currentState == State.Chasing)
-            return;
+        if (wanderAreaSprite == null || currentState == State.Chasing) return;
 
-        float randomX = Random.Range(wanderBounds.min.x, wanderBounds.max.x);
-        float randomY = Random.Range(wanderBounds.min.y, wanderBounds.max.y);
-        Vector3 newTarget = new Vector3(randomX, randomY, transform.position.z);
+        Vector3 newTarget = new Vector3(
+            Random.Range(wanderBounds.min.x, wanderBounds.max.x),
+            Random.Range(wanderBounds.min.y, wanderBounds.max.y),
+            transform.position.z
+        );
         agent.SetDestination(newTarget);
     }
 
@@ -246,124 +233,82 @@ public class Enemy : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!other.CompareTag("Player"))
-            return;
-
-        // If already in a persistent chase (via vision or walking), ignore new triggers.
-        if (isPersistentChase)
-            return;
-
-        // For nonpersistent detection, ignore slow movement.
-        if (playerMovement != null && playerMovement.currentMoveState == PlayerMovement.MoveState.Slow)
-            return;
+        if (!other.CompareTag("Player") || isPersistentChase || PlayerHiding.Instance.IsHidden) return;
 
         float distance = Vector3.Distance(transform.position, other.transform.position);
         if (distance <= detectionRadius)
         {
-            if (playerMovement.currentMoveState == PlayerMovement.MoveState.Walking)
-                StartChasing(true);
-            else if (playerMovement.currentMoveState == PlayerMovement.MoveState.Running)
-                StartChasing(false);
+            StartChasing(true);
         }
-        else if (distance <= secondaryDetectionRadius && playerMovement.currentMoveState == PlayerMovement.MoveState.Running)
+        else if (distance <= secondaryDetectionRadius)
         {
+            secondaryChaseTarget = other.transform.position;
             StartChasing(false);
         }
     }
 
-    private void OnTriggerStay2D(Collider2D other)
-    {
-        if (!other.CompareTag("Player"))
-            return;
-
-        if (isPersistentChase)
-            return;
-
-        if (playerMovement != null && playerMovement.currentMoveState == PlayerMovement.MoveState.Slow)
-            return;
-
-        float distance = Vector3.Distance(transform.position, other.transform.position);
-        if (distance <= detectionRadius)
-        {
-            if (playerMovement.currentMoveState == PlayerMovement.MoveState.Walking)
-                StartChasing(true);
-            else if (playerMovement.currentMoveState == PlayerMovement.MoveState.Running)
-                StartChasing(false);
-        }
-        else if (distance <= secondaryDetectionRadius && playerMovement.currentMoveState == PlayerMovement.MoveState.Running)
-        {
-            StartChasing(false);
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        // For persistent chase (walking/vision), do not cancel the chase upon exit.
-        // For nonpersistent (running) chase, the chase timer will cancel the chase.
-    }
-
-    // StartChasing starts a chase that lasts exactly chaseDuration seconds.
-    // If 'persistent' is true (set via walking or vision), the chase is locked-in.
     private void StartChasing(bool persistent)
     {
-        if (currentState == State.Chasing && isPersistentChase && persistent)
-            return;
+        if (currentState == State.Chasing && isPersistentChase && persistent) return;
 
         if (chaseCoroutine != null)
         {
             StopCoroutine(chaseCoroutine);
             chaseCoroutine = null;
         }
+        
         currentState = State.Chasing;
         isPersistentChase = persistent;
         chaseCoroutine = StartCoroutine(ChaseTimer());
     }
 
-    private IEnumerator ChaseTimer()
+    private void StopChasing()
     {
-        yield return new WaitForSeconds(chaseDuration);
+        if (chaseCoroutine != null)
+        {
+            StopCoroutine(chaseCoroutine);
+            chaseCoroutine = null;
+        }
         currentState = State.Wandering;
         isSecondaryChase = false;
         isPersistentChase = false;
-        SetNewWanderDestination();
     }
 
-    // GameOver is called when the player enters the kill radius.
-    // Replace or expand this method with your own end-game logic.
+    private IEnumerator ChaseTimer()
+    {
+        yield return new WaitForSeconds(chaseDuration);
+        StopChasing();
+    }
+
     private void GameOver()
     {
         Debug.Log("Game Over: Player has been killed.");
-        // Example: UnityEngine.SceneManagement.SceneManager.LoadScene("GameOverScene");
     }
 
     private void OnDrawGizmosSelected()
     {
-        // Draw wander area.
         if (wanderAreaSprite != null)
         {
             Gizmos.color = Color.green;
             Gizmos.DrawWireCube(wanderAreaSprite.bounds.center, wanderAreaSprite.bounds.size);
         }
-        // Primary detection radius.
+        
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
-        // Secondary detection radius.
+        
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f);
         Gizmos.DrawWireSphere(transform.position, secondaryDetectionRadius);
 
-        // Vision cone.
-        Gizmos.color = Color.yellow;
         Vector3 forward = transform.right;
-        Vector3 leftBoundary = Quaternion.Euler(0, 0, visionAngle * 0.5f) * forward;
-        Vector3 rightBoundary = Quaternion.Euler(0, 0, -visionAngle * 0.5f) * forward;
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary * visionDistance);
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary * visionDistance);
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawLine(transform.position, transform.position + 
+            Quaternion.Euler(0, 0, visionAngle * 0.5f) * forward * visionDistance);
+        Gizmos.DrawLine(transform.position, transform.position + 
+            Quaternion.Euler(0, 0, -visionAngle * 0.5f) * forward * visionDistance);
 
-        // Kill radius.
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(transform.position, killRadius);
 
-        // Patrol points.
         if (patrolPoints != null)
         {
             Gizmos.color = Color.blue;

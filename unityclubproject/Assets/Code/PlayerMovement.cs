@@ -18,7 +18,7 @@ public class PlayerMovement : MonoBehaviour
     public float cameraMoveSpeed = 3f;
 
     [Header("Room Trigger Settings")]
-    public Transform roomTriggerObject; // Manually assign the trigger object in the Inspector
+    public Transform roomTriggerObject;
 
     private Rigidbody2D rb;
     private Vector2 movementInput;
