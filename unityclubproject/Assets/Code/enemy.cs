@@ -283,6 +283,7 @@ public class Enemy : MonoBehaviour
     private void GameOver()
     {
         Debug.Log("Game Over: Player has been killed.");
+        SceneManager.LoadScene("Ending Screen");
     }
 
     private void OnDrawGizmosSelected()
