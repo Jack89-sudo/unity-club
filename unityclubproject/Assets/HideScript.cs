@@ -24,7 +24,6 @@ public class PlayerHiding : MonoBehaviour
     private Transform currentHideSpot;
     private Rigidbody2D rb;
     private SpriteRenderer[] renderers;
-    private Dictionary<SpriteRenderer, bool> rendererStates = new Dictionary<SpriteRenderer, bool>();
 
     public bool IsHidden => isHidden;
 
@@ -37,13 +36,7 @@ public class PlayerHiding : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        renderers = GetComponentsInChildren<SpriteRenderer>(true);
-        
-        // Store initial renderer states
-        foreach (SpriteRenderer renderer in renderers)
-        {
-            rendererStates[renderer] = renderer.enabled;
-        }
+        renderers = GetComponentsInChildren<SpriteRenderer>();
     }
 
     void Update()
@@ -66,7 +59,6 @@ public class PlayerHiding : MonoBehaviour
 
         foreach (Transform trigger in hidingTriggers)
         {
-            if (trigger == null) continue;
             if (!trigger.gameObject.activeInHierarchy) continue;
 
             Vector2 directionToTrigger = trigger.position - transform.position;
@@ -100,11 +92,11 @@ public class PlayerHiding : MonoBehaviour
         isHidden = true;
         preHidePosition = transform.position;
         
-        // Disable physics
+        // Store physics state
         rb.simulated = false;
         transform.position = hideSpot.position;
 
-        // Hide all renderers
+        // Hide visual elements
         foreach (SpriteRenderer renderer in renderers)
             renderer.enabled = false;
 
@@ -126,14 +118,9 @@ public class PlayerHiding : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         transform.position = preHidePosition + (Vector3)Random.insideUnitCircle.normalized * unhideOffset;
 
-        // Restore original renderer states
+        // Show visual elements
         foreach (SpriteRenderer renderer in renderers)
-        {
-            if (rendererStates.TryGetValue(renderer, out bool originalState))
-            {
-                renderer.enabled = originalState;
-            }
-        }
+            renderer.enabled = true;
 
         // Enable objects
         foreach (GameObject obj in objectsToHide)
@@ -144,6 +131,7 @@ public class PlayerHiding : MonoBehaviour
             playerFlashlight.enabled = true;
     }
 
+    // Debug visualization
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
