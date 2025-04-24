@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: apple
   m_EditorClassIdentifier: 
   itemType: 0
-  itemName: 
-  itemIcon: {fileID: 0}
-  worldPrefab: {fileID: 0}
+  itemName: apple
+  itemIcon: {fileID: 969708410496815771, guid: 22454119c485dd24db89461f5aae4a48, type: 3}
+  worldPrefab: {fileID: 4057718986626913612, guid: 2308d1b63cbc2b04fae0c0625bb7c25c, type: 3}
