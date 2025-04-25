@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: 39e3fe1073ed35747879085c21299883
+guid: 138bada8eaf040b46863a1314e762ba6
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -8808590520474612917
-    second: pink_lollipop_0
+      213: 1929147533652145266
+    second: MrBarb_0
+  - first:
+      213: 1197044729270515988
+    second: MrBarb_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +54,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 1000
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -75,7 +78,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 2
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -113,13 +116,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: pink_lollipop_0
+      name: MrBarb_0
       rect:
         serializedVersion: 2
-        x: 1
-        y: 0
-        width: 6
-        height: 8
+        x: 0
+        y: 16
+        width: 16
+        height: 16
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +131,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b4bcc3f679991c580800000000000000
-      internalID: -8808590520474612917
+      spriteID: 27438a6f575b5ca10800000000000000
+      internalID: 1929147533652145266
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: MrBarb_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4193c6cc6d1cc9010800000000000000
+      internalID: 1197044729270515988
       vertices: []
       indices: 
       edges: []
@@ -138,7 +163,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: d6c9794049e4b06498af5c1e52237d75
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +173,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      pink_lollipop_0: -8808590520474612917
+      MrBarb_0: 1929147533652145266
+      MrBarb_1: 1197044729270515988
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -16,7 +16,7 @@ public class Item : ScriptableObject
 
     [Header("Display")]
     public string itemName;
-    public Sprite itemIcon;
+    public Sprite icon;
 
     [Header("World Prefab")]
     public GameObject worldPrefab; // Assign prefab with ItemPickup + SpriteRenderer

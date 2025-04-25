@@ -29,7 +29,7 @@ public class InventoryManager : MonoBehaviour
         // Instantiate a new UI slot:
         var go = Instantiate(slotPrefab, itemsParent);
         var img = go.GetComponent<Image>();
-        img.sprite = item.itemIcon;
+        img.sprite = item.icon;
 
         // Optional: store reference on the slot for future (e.g. hover tooltip)
     }

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class control : MonoBehaviour
 {
@@ -13,20 +14,28 @@ public class control : MonoBehaviour
     public int difficulty = 1;
 
     [Header("Timing Settings (in seconds)")]
-    public float minEventInterval = 120f; // 2 minutes
-    public float maxEventInterval = 180f; // 3 minutes
-    public float baseOffDuration = 5f;    // Base duration lights are off
+    public float minEventInterval = 120f;
+    public float maxEventInterval = 180f;
+    public float baseOffDuration = 5f;
 
     [Header("Task Tracking")]
-    public TextMeshProUGUI taskText; // Assign in Inspector
-    public int currentTask = 0;      // Starts at 0
+    public TextMeshProUGUI taskText;
+    public int currentTask = 0;
 
     private int homeworkCompleted = 0;
+
+    [Header("Escape Exit")]
+    [Tooltip("Trigger collider to mark level exit; only active when Task is Escape.")]
+    public Collider2D exitTrigger;
 
     void Start()
     {
         StartCoroutine(ManageLightsRoutine());
         UpdateTaskDisplay();
+
+        // Ensure exit trigger is disabled until escape task
+        if (exitTrigger != null)
+            exitTrigger.enabled = false;
     }
 
     IEnumerator ManageLightsRoutine()
@@ -39,8 +48,7 @@ public class control : MonoBehaviour
             if (lightControllers.Count > 0)
             {
                 int randomIndex = Random.Range(0, lightControllers.Count);
-                LightController2D chosen = lightControllers[randomIndex];
-
+                var chosen = lightControllers[randomIndex];
                 if (chosen != null)
                 {
                     chosen.SetLights(false);
@@ -58,13 +66,10 @@ public class control : MonoBehaviour
         {
             homeworkCompleted++;
             if (homeworkCompleted >= 6)
-            {
-                currentTask = 8; // Move to "Escape"
-            }
+                currentTask = 8; // Escape
             else
-            {
-                currentTask = 1 + homeworkCompleted; // Next homework task
-            }
+                currentTask = 1 + homeworkCompleted;
+
             UpdateTaskDisplay();
         }
     }
@@ -78,18 +83,9 @@ public class control : MonoBehaviour
         }
     }
 
-    public void Escape()
-    {
-        if (currentTask == 8)
-        {
-            taskText.text = "You escaped!";
-        }
-    }
-
     private void UpdateTaskDisplay()
     {
         if (taskText == null) return;
-
         switch (currentTask)
         {
             case 0:
@@ -104,10 +100,26 @@ public class control : MonoBehaviour
                 break;
             case 8:
                 taskText.text = "Current Task: Escape";
+                // activate exit trigger
+                if (exitTrigger != null)
+                    exitTrigger.enabled = true;
                 break;
             default:
                 taskText.text = "No current task";
                 break;
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (currentTask == 8 && exitTrigger != null && other == exitTrigger)
+        {
+            // ensure it's the player
+            var player = other.attachedRigidbody?.GetComponent<PlayerMovement>();
+            if (player != null)
+            {
+                SceneManager.LoadScene("win");
+            }
         }
     }
 }

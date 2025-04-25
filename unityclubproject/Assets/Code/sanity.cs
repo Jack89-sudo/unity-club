@@ -1,5 +1,7 @@
+// PlayerSanity.cs
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class PlayerSanity : MonoBehaviour
 {
@@ -7,63 +9,81 @@ public class PlayerSanity : MonoBehaviour
     [Tooltip("The player's starting sanity value.")]
     public float sanity = 100f;
 
-    [Tooltip("Radius around the player within which sanity will decrease if an enemy is present.")]
+    [Tooltip("Radius around the player within which sanity will decrease if a matching object sprite is present.")]
     public float sanityLossRadius = 5f;
 
-    [Tooltip("Rate at which sanity decreases per second when in range of an enemy.")]
-    public float sanityLossRate = 10f;
+    [Header("Sprite Loss Settings")]
+    [Tooltip("List of sprites and their associated sanity loss rates.")]
+    public List<SpriteLossEntry> spriteLossEntries;
 
-    [Header("Enemy Settings")]
-    [Tooltip("Reference to the enemy GameObject that will trigger sanity loss.")]
-    public GameObject enemyGameObject;
+    [System.Serializable]
+    public class SpriteLossEntry
+    {
+        public Sprite sprite;
+        [Tooltip("Sanity loss per second when this sprite is within range.")]
+        public float lossRate;
+    }
 
     [Header("UI Settings")]
     [Tooltip("Reference to the UI Slider that visualizes the player's sanity.")]
     public Slider sanitySlider;
 
+    private float initialSanity;
+
     void Start()
     {
-        // Initialize the slider's maximum value and set its initial value.
+        initialSanity = sanity;
         if (sanitySlider != null)
         {
-            sanitySlider.maxValue = 100f;  // Assumes maximum sanity is 100
+            sanitySlider.maxValue = initialSanity;
             sanitySlider.value = sanity;
         }
     }
 
     void Update()
     {
-        // Find all colliders within the defined sanity loss radius.
+        // Gather all colliders in range
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, sanityLossRadius);
-        bool enemyInRange = false;
+        float totalLossRate = 0f;
 
-        // Check if any of the colliders belong to the assigned enemy GameObject.
-        foreach (Collider2D col in colliders)
+        // For each collider, check its sprite against our entries
+        foreach (var col in colliders)
         {
-            if (col.gameObject == enemyGameObject)
+            var sr = col.GetComponent<SpriteRenderer>();
+            if (sr == null || spriteLossEntries == null) continue;
+
+            foreach (var entry in spriteLossEntries)
             {
-                enemyInRange = true;
-                break;
+                if (sr.sprite == entry.sprite)
+                {
+                    totalLossRate += entry.lossRate;
+                    break;
+                }
             }
         }
 
-        // Decrease sanity over time if the enemy is in range.
-        if (enemyInRange)
-        {
-            sanity -= sanityLossRate * Time.deltaTime;
-        }
+        // Apply sanity loss
+        if (totalLossRate > 0f)
+            sanity -= totalLossRate * Time.deltaTime;
 
-        // Clamp sanity between 0 and 100.
-        sanity = Mathf.Clamp(sanity, 0f, 100f);
+        // Clamp
+        sanity = Mathf.Clamp(sanity, 0f, initialSanity);
 
-        // Update the UI slider to reflect the current sanity.
+        // Update UI
         if (sanitySlider != null)
-        {
             sanitySlider.value = sanity;
-        }
     }
 
-    // Visualize the sanity loss radius in the Scene view.
+    /// <summary>
+    /// Refill sanity by the given amount, clamped to the original maximum.
+    /// </summary>
+    public void Refill(float amount)
+    {
+        sanity = Mathf.Clamp(sanity + amount, 0f, initialSanity);
+        if (sanitySlider != null)
+            sanitySlider.value = sanity;
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.blue;

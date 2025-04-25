@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering.Universal;
-using Unity.VisualScripting;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -42,10 +41,50 @@ public class PlayerMovement : MonoBehaviour
     public Light2D flashlightLight;
 
     [Header("Drop Settings")]
-    public float dropOffset = 1f; // distance in front of player to drop
+    public float dropOffset = 1f;
+
+    [Header("Sanity Settings")]
+    public Slider sanityBar;
+    public float maxSanity = 100f;
+    private float currentSanity;
+
+    [Header("Audio Clips")]
+    [Tooltip("Looped when walking")]
+    public AudioClip footstepWalkClip;
+    [Tooltip("Looped when running")]
+    public AudioClip footstepRunClip;
+    [Tooltip("One-shot when toggling flashlight")]
+    public AudioClip flashlightClip;
+    [Tooltip("One-shot when eating apple")]
+    public AudioClip appleClip;
+    [Tooltip("One-shot when eating lollipop")]
+    public AudioClip lollipopClip;
+
+    [Header("Audio Settings")]
+    [Range(0f, 1f)] public float footstepVolume = 0.5f;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
 
     private List<Item> inventory = new List<Item>();
     private int equippedIndex = -1;
+
+    // audio sources
+    private AudioSource footstepSource;
+    private AudioSource sfxSource;
+
+    void Awake()
+    {
+        // Footsteps: looping
+        footstepSource = gameObject.AddComponent<AudioSource>();
+        footstepSource.loop = true;
+        footstepSource.playOnAwake = false;
+        footstepSource.volume = footstepVolume;
+
+        // SFX: one-shot
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        sfxSource.loop = false;
+        sfxSource.playOnAwake = false;
+        sfxSource.volume = sfxVolume;
+    }
 
     void Start()
     {
@@ -56,13 +95,18 @@ public class PlayerMovement : MonoBehaviour
         if (playerCamera == null)
             playerCamera = Camera.main;
 
-        // hide UI, hand, flashlight
         foreach (var slot in itemUISlots)
             slot.enabled = false;
-        if (handRenderer != null)
-            handRenderer.enabled = false;
-        if (flashlightLight != null)
-            flashlightLight.enabled = false;
+        if (handRenderer != null) handRenderer.enabled = false;
+        if (flashlightLight != null) flashlightLight.enabled = false;
+
+        if (sanityBar != null)
+        {
+            currentSanity = maxSanity;
+            sanityBar.minValue = 0f;
+            sanityBar.maxValue = maxSanity;
+            sanityBar.value = currentSanity;
+        }
     }
 
     void Update()
@@ -70,18 +114,40 @@ public class PlayerMovement : MonoBehaviour
         HandleMovementInput();
         RotateTowardsMouse();
 
+        ManageFootstepAudio();
+
         if (Input.GetKeyDown(KeyCode.E))
-            TryPickUpItem();
+        {
+            if (equippedIndex >= 0)
+            {
+                var itm = inventory[equippedIndex];
+                if (itm.itemType == ItemType.Lollipop)
+                    UseLollipop();
+                else if (itm.itemType == ItemType.Apple)
+                    UseApple();
+                else
+                    TryPickUpItem();
+            }
+            else
+            {
+                TryPickUpItem();
+            }
+        }
 
         // Equip by number
         for (int i = 0; i < itemUISlots.Count; i++)
             if (Input.GetKeyDown(KeyCode.Alpha1 + i))
                 EquipItem(i);
 
-        // Toggle flashlight
+        // Toggle flashlight (with sound)
         if (equippedIndex >= 0 && inventory[equippedIndex].itemType == ItemType.Flashlight)
+        {
             if (Input.GetKeyDown(KeyCode.F) && flashlightLight != null)
+            {
                 flashlightLight.enabled = !flashlightLight.enabled;
+                sfxSource.PlayOneShot(flashlightClip, sfxVolume);
+            }
+        }
 
         // Drop item
         if (Input.GetKeyDown(KeyCode.G))
@@ -112,14 +178,41 @@ public class PlayerMovement : MonoBehaviour
             targetSpeed = runSpeed;
             AdjustCameraZoom(runZoom);
         }
-        else
+        else if (movementInput.sqrMagnitude > 0f)
         {
             currentMoveState = MoveState.Walking;
             targetSpeed = walkSpeed;
             AdjustCameraZoom(defaultZoom);
         }
+        else
+        {
+            currentMoveState = MoveState.Idle;
+            targetSpeed = 0f;
+            AdjustCameraZoom(defaultZoom);
+        }
 
         currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.deltaTime);
+    }
+
+    void ManageFootstepAudio()
+    {
+        // Only play when walking or running and moving
+        bool moving = movementInput.sqrMagnitude > 0.01f;
+        if (moving && (currentMoveState == MoveState.Walking || currentMoveState == MoveState.Running))
+        {
+            AudioClip desired = currentMoveState == MoveState.Running ? footstepRunClip : footstepWalkClip;
+            if (footstepSource.clip != desired)
+            {
+                footstepSource.clip = desired;
+                footstepSource.volume = footstepVolume;
+                footstepSource.Play();
+            }
+        }
+        else
+        {
+            if (footstepSource.isPlaying)
+                footstepSource.Stop();
+        }
     }
 
     void TryPickUpItem()
@@ -147,7 +240,7 @@ public class PlayerMovement : MonoBehaviour
         int slotIdx = inventory.Count - 1;
         if (slotIdx < itemUISlots.Count)
         {
-            itemUISlots[slotIdx].sprite = item.itemIcon;
+            itemUISlots[slotIdx].sprite = item.icon;
             itemUISlots[slotIdx].enabled = true;
         }
         else
@@ -162,72 +255,48 @@ public class PlayerMovement : MonoBehaviour
         {
             equippedIndex = -1;
             if (handRenderer != null) handRenderer.enabled = false;
-            if (flashlightLight != null) flashlightLight.enabled = false;
             return;
         }
+
         equippedIndex = index;
-        Item itm = inventory[index];
+        var itm = inventory[index];
+        if (handRenderer != null)
+        {
+            handRenderer.sprite = itm.icon;
+            handRenderer.enabled = true;
+        }
 
         switch (itm.itemType)
         {
-            case ItemType.Apple:
-                Debug.Log("Eaten apple: restores health");
-                break;
-            case ItemType.Lollipop:
-                Debug.Log("Lollipop: temporary speed boost");
-                break;
-            case ItemType.Flashlight:
-                Debug.Log("Flashlight equipped (press F to toggle)");
-                if (flashlightLight != null) flashlightLight.enabled = false;
-                break;
-            case ItemType.Key:
-                Debug.Log("Key equipped: can unlock doors");
-                break;
-        }
-
-        if (handRenderer != null)
-        {
-            handRenderer.sprite = itm.itemIcon;
-            handRenderer.enabled = true;
+            case ItemType.Apple: Debug.Log("Apple equipped: press E to boost speed"); break;
+            case ItemType.Lollipop: Debug.Log("Lollipop equipped: press E to restore sanity"); break;
+            case ItemType.Flashlight: Debug.Log("Flashlight equipped (F to toggle)"); break;
+            case ItemType.Key: Debug.Log("Key equipped: can unlock doors"); break;
         }
     }
 
     void DropEquippedItem()
     {
-        if (equippedIndex < 0 || equippedIndex >= inventory.Count)
-            return;
-
-        Item itm = inventory[equippedIndex];
+        if (equippedIndex < 0 || equippedIndex >= inventory.Count) return;
+        var itm = inventory[equippedIndex];
         if (itm.worldPrefab != null)
         {
             Vector3 dropPos = transform.position + transform.right * dropOffset;
             var obj = Instantiate(itm.worldPrefab, dropPos, Quaternion.identity);
-            var pickup = obj.GetComponent<ItemPickup>();
-            if (pickup != null)
-                pickup.item = itm;
+            obj.GetComponent<ItemPickup>().item = itm;
         }
-
-        // remove from inventory & UI
         RemoveEquippedItem();
-    }
-
-    public bool HasEquippedKey()
-    {
-        return equippedIndex >= 0 && inventory[equippedIndex].itemType == ItemType.Key;
     }
 
     public void RemoveEquippedItem()
     {
-        if (equippedIndex < 0 || equippedIndex >= inventory.Count)
-            return;
-
+        if (equippedIndex < 0 || equippedIndex >= inventory.Count) return;
         inventory.RemoveAt(equippedIndex);
-
         for (int i = 0; i < itemUISlots.Count; i++)
         {
             if (i < inventory.Count)
             {
-                itemUISlots[i].sprite = inventory[i].itemIcon;
+                itemUISlots[i].sprite = inventory[i].icon;
                 itemUISlots[i].enabled = true;
             }
             else
@@ -235,10 +304,28 @@ public class PlayerMovement : MonoBehaviour
                 itemUISlots[i].enabled = false;
             }
         }
-
         if (handRenderer != null) handRenderer.enabled = false;
         if (flashlightLight != null) flashlightLight.enabled = false;
         equippedIndex = -1;
+    }
+
+    private void UseLollipop()
+    {
+        var sanityComp = GetComponent<PlayerSanity>();
+        if (sanityComp != null) sanityComp.Refill(30f);
+        sfxSource.PlayOneShot(lollipopClip, sfxVolume);
+        RemoveEquippedItem();
+        Debug.Log("Sanity restored by 30");
+    }
+
+    private void UseApple()
+    {
+        walkSpeed *= 1.2f;
+        runSpeed *= 1.2f;
+        slowSpeed *= 1.2f;
+        sfxSource.PlayOneShot(appleClip, sfxVolume);
+        RemoveEquippedItem();
+        Debug.Log("Movement speeds increased by 20%");
     }
 
     void RotateTowardsMouse()
@@ -246,16 +333,16 @@ public class PlayerMovement : MonoBehaviour
         if (playerCamera == null) return;
         Vector3 m = playerCamera.ScreenToWorldPoint(Input.mousePosition);
         m.z = 0f;
-        Vector2 d = (m - transform.position).normalized;
-        float ang = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+        Vector2 dir = (m - transform.position).normalized;
+        float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0, 0, ang);
     }
 
     void SmoothCameraFollow()
     {
         if (playerCamera == null) return;
-        Vector3 target = new Vector3(transform.position.x, transform.position.y, playerCamera.transform.position.z);
-        playerCamera.transform.position = Vector3.Lerp(playerCamera.transform.position, target, Time.deltaTime * cameraMoveSpeed);
+        Vector3 targetPos = new Vector3(transform.position.x, transform.position.y, playerCamera.transform.position.z);
+        playerCamera.transform.position = Vector3.Lerp(playerCamera.transform.position, targetPos, Time.deltaTime * cameraMoveSpeed);
     }
 
     void AdjustCameraZoom(float z)
