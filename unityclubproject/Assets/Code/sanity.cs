@@ -2,6 +2,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
+
 
 public class PlayerSanity : MonoBehaviour
 {
@@ -40,12 +42,20 @@ public class PlayerSanity : MonoBehaviour
         }
     }
 
+ private void GameOver()
+    {
+        Debug.Log("Game Over: Player has been killed.");
+        SceneManager.LoadScene("EndingScreen");
+    }
     void Update()
     {
         // Gather all colliders in range
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, sanityLossRadius);
         float totalLossRate = 0f;
 
+        if(sanity <= 0){
+            GameOver();
+        }
         // For each collider, check its sprite against our entries
         foreach (var col in colliders)
         {

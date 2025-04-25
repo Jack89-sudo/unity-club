@@ -27,11 +27,13 @@ public class control : MonoBehaviour
     [Header("Escape Exit")]
     [Tooltip("Trigger collider to mark level exit; only active when Task is Escape.")]
     public Collider2D exitTrigger;
+    private int winLayer;  // Layer index for optimization
 
     void Start()
     {
         StartCoroutine(ManageLightsRoutine());
         UpdateTaskDisplay();
+        winLayer = LayerMask.NameToLayer("Win");
 
         // Ensure exit trigger is disabled until escape task
         if (exitTrigger != null)
@@ -101,6 +103,7 @@ public class control : MonoBehaviour
             case 8:
                 taskText.text = "Current Task: Escape";
                 // activate exit trigger
+                SceneManager.LoadScene("Win");
                 if (exitTrigger != null)
                     exitTrigger.enabled = true;
                 break;
@@ -110,16 +113,18 @@ public class control : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+private void OnTriggerEnter2D(Collider2D other)
+{
+    // Debug with more details
+    Debug.Log($"Collision detected with: {other.gameObject.name}\n" +
+             $"Layer: {LayerMask.LayerToName(other.gameObject.layer)}\n" +
+             $"Current task: {currentTask}");
+
+    if(currentTask == 8 && other.gameObject.layer == winLayer)
     {
-        if (currentTask == 8 && exitTrigger != null && other == exitTrigger)
-        {
-            // ensure it's the player
-            var player = other.attachedRigidbody?.GetComponent<PlayerMovement>();
-            if (player != null)
-            {
-                SceneManager.LoadScene("win");
-            }
-        }
+        Debug.Log("WIN CONDITION MET!");
+        SceneManager.LoadScene("Win");
     }
 }
+}
+    

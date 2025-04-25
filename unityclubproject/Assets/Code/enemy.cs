@@ -37,7 +37,7 @@ public class Enemy : MonoBehaviour
     [SerializeField] private AudioClip timedSpeechClip;
     [Tooltip("Clip to play full-length.")]
     [SerializeField] private AudioClip fullAudioClip;
-    [Range(0f, 1f)]
+    [Range(0f, 10f)]
     [Tooltip("Volume for speech clip.")]
     [SerializeField] private float speechVolume = 1f;
     [Range(0.1f, 3f)]
