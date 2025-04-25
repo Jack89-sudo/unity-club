@@ -66,6 +66,7 @@ public class Enemy : MonoBehaviour
 
     [Header("Light Settings")]
     [SerializeField] private Light2D exitRoomLight;
+    private Color originalLightColor;
 
     [Header("Kill Settings")]
     [SerializeField] private float killRadius = 1f;
@@ -99,7 +100,7 @@ public class Enemy : MonoBehaviour
     private Camera uiCamera;
     private Transform playerTransform;
 
-    // Automatically created audio sources
+    // Audio
     private AudioSource speechAudioSource;
     private AudioSource fullAudioSource;
 
@@ -110,10 +111,8 @@ public class Enemy : MonoBehaviour
 
     void Awake()
     {
-        // Auto-add two AudioSources so you never have to assign one in the Inspector
         speechAudioSource = gameObject.AddComponent<AudioSource>();
         speechAudioSource.playOnAwake = false;
-
         fullAudioSource = gameObject.AddComponent<AudioSource>();
         fullAudioSource.playOnAwake = false;
     }
@@ -161,10 +160,16 @@ public class Enemy : MonoBehaviour
             wanderBounds = new Bounds(transform.position, Vector3.one * 5f);
         }
 
+        // Light initialization
+        if (exitRoomLight != null)
+        {
+            originalLightColor = exitRoomLight.color;
+            exitRoomLight.enabled = false;
+        }
+
         hasAppeared = false;
         enemySprite.enabled = false;
         agent.enabled = false;
-        if (exitRoomLight != null) exitRoomLight.enabled = false;
 
         if (taskController.currentTask >= appearTaskNumber)
             Appear();
@@ -202,6 +207,23 @@ public class Enemy : MonoBehaviour
         bool isRunning = playerMovement != null && playerMovement.currentMoveState == PlayerMovement.MoveState.Running;
         bool isCrouching = playerMovement != null && playerMovement.currentMoveState == PlayerMovement.MoveState.Slow;
 
+        // Light color update
+        if (exitRoomLight != null)
+        {
+            bool isOutsideWander = !wanderBounds.Contains(transform.position);
+            
+            if (currentState == State.Chasing)
+            {
+                exitRoomLight.enabled = true;
+                exitRoomLight.color = Color.red;
+            }
+            else
+            {
+                exitRoomLight.enabled = isOutsideWander;
+                exitRoomLight.color = originalLightColor;
+            }
+        }
+
         if (CheckVision()) StartChasing(true);
         else if (currentState == State.Wandering && dist <= secondaryDetectionRadius && isRunning) StartChasing(false);
         else if (currentState == State.Wandering && dist <= detectionRadius && !isCrouching) StartChasing(true);
@@ -219,8 +241,9 @@ public class Enemy : MonoBehaviour
             wanderCoroutine = StartCoroutine(WanderDelayRoutine());
 
         RotateTowardsMovementDirection();
-        if (exitRoomLight != null) exitRoomLight.enabled = !wanderBounds.Contains(transform.position);
     }
+
+    // === ALL ORIGINAL METHODS BELOW THIS LINE ===
 
     private void Appear()
     {
@@ -247,7 +270,6 @@ public class Enemy : MonoBehaviour
             dialogueText.gameObject.SetActive(true);
         }
 
-        // ▶️ timed speech clip
         if (timedSpeechClip != null)
         {
             speechAudioSource.clip = timedSpeechClip;
@@ -257,7 +279,6 @@ public class Enemy : MonoBehaviour
             StartCoroutine(StopSpeechAfterDuration(dialogueDuration));
         }
 
-        // ▶️ full-length clip
         if (fullAudioClip != null)
         {
             fullAudioSource.clip = fullAudioClip;
